@@ -12,7 +12,7 @@ Execute um container do PostgreSQL somente para copiar os arquivos de configura�
 
 ```sh
 # vamos executar somente para poder copiar os arquivos de configuração
-docker container run --rm --name pg_temp -d postgres:14
+docker container run --name pg_temp -d -e POSTGRES_PASSWORD=123@mudar postgres:14
 ```
 
 ```sh
@@ -88,6 +88,8 @@ Crie um slot no primário para cada réplica, onde cada slot terá um valor
 
 ```sh
 psql -c "select * from pg_create_physical_replication_slot('replica_1_slot');"
+
+psql -c "select slot_name, slot_type, active, wal_status from pg_replication_slots;"
 ```
 
 ## Configurando a instância réplica
@@ -98,11 +100,12 @@ Vamos criar uma instância temporária comente para realizar o processo de base
 backup e copiar os arquivos `postgresql.conf` e `pg_hba.conf`.
 
 Mas antes, precisamos comentar a linha que possui a instrução `command`,
-da configuração de `replica` do `docker-compose.yaml`.
+da configuração de `replica` do `docker-compose.yaml`. Bem como os volumes
+que mapeiam os arquivos `postgresql.conf`e `pg_hba.conf`.
 
 ```sh
 # Iniciando uma instância temporária da replica.
-docker-compose run --rm -d -u postgres --name repl_temp replica bash
+docker-compose run --rm -i -u postgres --name repl_temp replica bash
 ```
 
 ```sh
@@ -133,7 +136,7 @@ chmod 644 replica/postgresql.cong
 chmod 644 replica/pg_hba.conf
 ```
 
-Descomente a linha com a instrução `command`.
+Descomente a linha com a instrução `command` e `volumes`.
 
 Edite o arquivo `replica/postgresql.conf` e configure o acesso à instância primária
 adicionando as configurações abaixo:
