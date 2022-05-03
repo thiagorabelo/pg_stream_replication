@@ -163,3 +163,5 @@ primary_slot_name = 'replica_1_slot'
 - <https://girders.org/postgresql/2021/11/05/setup-postgresql14-replication/>
 - <https://hevodata.com/learn/postgresql-replication-slots/>
 - <https://www.archaeogeek.com/blog/2011/08/11/setting-up-a-postgresql-standby-servers/>
+- <https://mydbops.wordpress.com/2021/01/20/pgpool-ii-installation-configuration-part-i/>
+- <https://www.pgpool.net/docs/pgpool-II-3.0/tutorial-en.html>

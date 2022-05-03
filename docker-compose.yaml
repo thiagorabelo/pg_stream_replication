@@ -22,11 +22,11 @@ services:
       - ./primary/data:/var/lib/postgresql/data:rw
       - ./primary/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./primary/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-
-    command: -c 'config_file=/etc/postgresql/postgresql.conf' -c 'hba_file=/etc/postgresql/pg_hba.conf'
-
     environment:
       - POSTGRES_PASSWORD=123@mudar
+    ports:
+      - 5438:5432
+    command: -c 'config_file=/etc/postgresql/postgresql.conf' -c 'hba_file=/etc/postgresql/pg_hba.conf'
 
   replica:
     <<: *pg-replication
@@ -35,11 +35,25 @@ services:
       - ./replica/data:/var/lib/postgresql/data:rw
       - ./replica/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./replica/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-
-    command: -c 'config_file=/etc/postgresql/postgresql.conf' -c 'hba_file=/etc/postgresql/pg_hba.conf'
-
     environment:
       - POSTGRES_PASSWORD=123@mudar
-
+    ports:
+      - 5437:5432
+    command: -c 'config_file=/etc/postgresql/postgresql.conf' -c 'hba_file=/etc/postgresql/pg_hba.conf'
     depends_on:
       - primary
+
+  pgpool:
+    image: pgpool_debian:4.1.4
+    build:
+      context: .
+      dockerfile: pgpool2/Dockerfile
+    volumes:
+      - ./pgpool2/conf/pgpool.conf:/etc/pgpool2/pgpool.conf
+    ports:
+      - 5436:5432
+    networks:
+      - default
+    depends_on:
+      - primary
+      - replica
