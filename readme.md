@@ -4,7 +4,7 @@ Usaremos as imagens Docker oficiais do Postgres 14 para criar o cluster com
 uma instância primária e uma réplica.
 
 As configurações necessárias para rodar os container estão no arquivo
-`docker-compose.yaml`, como rede, `Dockerfile`.
+`docker-compose.yaml`, como rede e `Dockerfile`.
 
 ## Configurando a instância primária
 
@@ -75,7 +75,7 @@ Para tal, acesse o terminal do container primário:
 
 ```sh
 # Acessando o terminal do container
-docker compose exec -u postgres primary bash
+docker-compose exec -u postgres primary bash
 ```
 
 ```sh
@@ -96,12 +96,20 @@ psql -c "select slot_name, slot_type, active, wal_status from pg_replication_slo
 
 ### Criando o Base Backup
 
-Vamos criar uma instância temporária comente para realizar o processo de base
-backup e copiar os arquivos `postgresql.conf` e `pg_hba.conf`.
+Antes de qualquer ação, precisamos comentar a linha que possui a instrução
+`command`, e os volumes que mapeiam os arquivos `postgresql.conf`e
+`pg_hba.conf`, da configuração de `replica` do `docker-compose.yaml`
 
-Mas antes, precisamos comentar a linha que possui a instrução `command`,
-da configuração de `replica` do `docker-compose.yaml`. Bem como os volumes
-que mapeiam os arquivos `postgresql.conf`e `pg_hba.conf`.
+Em seguida vamos executar uma instância temporária para criar no host a pasta
+onde serão armazenados os arquivos e mudar as permissões.
+
+```sh
+docker-compose run --rm replica bash \
+    -c "chown postgres:postgres /var/lib/postgresql/data"
+```
+
+Vamos, novamente, criar uma instância temporária somente para realizar o
+processo de base backup e copiar os arquivos `postgresql.conf` e `pg_hba.conf`.
 
 ```sh
 # Iniciando uma instância temporária da replica.
