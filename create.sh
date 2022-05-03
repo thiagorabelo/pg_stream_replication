@@ -8,22 +8,18 @@ PG_NETWORK=${PG_NETWORK:-192.168.55.0/24}
 
 PG_CONTAINER_DATA="/var/lib/postgresql/data"
 
+PGPOOL_MONITOR="monitor"
+PGPOOL_MONITOR_PWD="m0n1T0r"
+PGPOOL_MONITOR_DB="monitor"
+
 dc="$(docker compose --help 2>&1 > /dev/null && echo "docker compose" || echo "docker-compose")"
 
-function wait_pg_running() {
-    local container=${1}
-    local file=${PG_CONTAINER_DATA}/postgresql.conf
-    until [[ "$(docker container exec -u postgres ${container} psql -qAt -c "select 1;" 2>/dev/null )" == 1 ]]; do
-        echo "Aguardando ${container}"
-        sleep 1;
-    done;
-}
-
-function wait_pg_compose_running() {
-    local service=${1}
-    until [[ "$(${dc} exec -u postgres ${service} psql -qAt -c "select 1;" 2>/dev/null)"  ==  1 ]]; do
-        echo "Aguardando ${service}"
-        sleep 1;
+function wait_pg_ok() {
+    local agent=${AGENT:-"docker container"}
+    local resource=${1}
+    until [[ "$(${agent} exec -u postgres ${resource} psql -qAt -c "select 1;" 2>/dev/null )" == 1 ]]; do
+        echo "Aguardando ${resource}"
+        sleep 1
     done;
 }
 
@@ -32,7 +28,7 @@ docker container run --name pg_temp -d \
     -e POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
     "postgres:${PG_VERSION}"
 
-wait_pg_running pg_temp
+wait_pg_ok pg_temp
 
 docker container cp pg_temp:"${PG_CONTAINER_DATA}/postgresql.conf" primary/
 docker container cp pg_temp:"${PG_CONTAINER_DATA}/pg_hba.conf" primary/
@@ -47,12 +43,16 @@ echo -e "\nhost    replication     ${PG_REPLICATION_USER}            ${PG_NETWOR
 
 ${dc} up -d primary
 
-wait_pg_compose_running primary
+AGENT="${dc}" wait_pg_ok primary
 
 ${dc} exec -u postgres primary createuser --replication ${PG_REPLICATION_USER}
 ${dc} exec -u postgres primary \
     psql -c "select * from pg_create_physical_replication_slot('${PG_SLOT}');"
 
+${dc} exec -u postgres primary \
+    psql -c "create user ${PGPOOL_MONITOR} with login encrypted password '${PGPOOL_MONITOR_PWD}';"
+${dc} exec -u postgres primary \
+    createdb --owner=${PGPOOL_MONITOR} ${PGPOOL_MONITOR}
 
 touch ./replica/postgresql.conf
 touch ./replica/pg_hba.conf
