@@ -1,5 +1,7 @@
+ARG PGVERSION=14
+
 # Debian 11, codinome bullseye
-FROM postgres:14
+FROM postgres:${PGVERSION}
 
 ENV PAGER="less -S" \
     LANG="pt_BR.UTF-8" \
