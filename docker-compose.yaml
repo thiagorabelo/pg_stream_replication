@@ -46,8 +46,8 @@ services:
   pgpool:
     image: pgpool_debian:4.1.4
     build:
-      context: .
-      dockerfile: pgpool2/Dockerfile
+      context: ./pgpool2/
+      # dockerfile: pgpool2/Dockerfile
     volumes:
       - ./pgpool2/conf/pgpool.conf:/etc/pgpool2/pgpool.conf
     ports:
